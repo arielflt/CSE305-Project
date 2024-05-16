@@ -48,8 +48,8 @@ void compute_forces_segment(const int n, const std::vector<double>& masses, cons
             std::lock_guard<std::mutex> lock(force_mutex);
             forces[i].x += force_ij.x;
             forces[i].y += force_ij.y;
-            forces[j].x -= force_ij.x; // Newton's third law
-            forces[j].y -= force_ij.y; // Newton's third law
+            forces[j].x -= force_ij.x; 
+            forces[j].y -= force_ij.y; 
         }
     }
 }
@@ -122,6 +122,10 @@ int main() {
         for (int i = 0; i < n; ++i) {
             std::cout << "Body " << i + 1 << ": Position (" << positions[i].x << ", " << positions[i].y << ")" << std::endl;
         }
+        //double dx = positions[1].x - positions[0].x;
+        //double dy = positions[1].y - positions[0].y;
+        //double distance = std::sqrt(dx * dx + dy * dy);
+        //std::cout << "Distance between bodies: " << distance << " meters" << std::endl;
     }
 
     return 0;
