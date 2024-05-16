@@ -2,8 +2,11 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <thread>
+#include <mutex>
 
-// Function definitions should just implement the declared functions in the header file
+std::mutex force_mutex;
+
 void gather_input(int &n, std::vector<double> &masses, std::vector<Vector2D> &positions, std::vector<Vector2D> &velocities, double &time_step, double &total_time) {
     std::cout << "Enter the number of bodies to simulate: ";
     std::cin >> n;
@@ -32,29 +35,72 @@ void gather_input(int &n, std::vector<double> &masses, std::vector<Vector2D> &po
     std::cin >> total_time;
 }
 
-void compute_forces(const int n, const std::vector<double>& masses, const std::vector<Vector2D>& positions, std::vector<Vector2D>& forces, double G) {
-    forces.assign(n, Vector2D{0, 0});
+void compute_forces_segment(const int n, const std::vector<double>& masses, const std::vector<Vector2D>& positions, std::vector<Vector2D>& forces, int start, int end, double G) {
+    for (int i = start; i < end; ++i) {
+        Vector2D force = {0, 0};
+        for (int j = i + 1; j < n; ++j) {
+            Vector2D delta = {positions[j].x - positions[i].x, positions[j].y - positions[i].y};
+            double dist_squared = delta.x * delta.x + delta.y * delta.y;
+            double dist = std::sqrt(dist_squared);
+            double force_magnitude = G * masses[i] * masses[j] / dist_squared;
+            Vector2D force_ij = {force_magnitude * delta.x / dist, force_magnitude * delta.y / dist};
 
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            if (i != j) {
-                Vector2D delta = {positions[j].x - positions[i].x, positions[j].y - positions[i].y};
-                double dist_squared = delta.x * delta.x + delta.y * delta.y;
-                double dist = std::sqrt(dist_squared);
-                double force_magnitude = G * masses[i] * masses[j] / dist_squared;
-                forces[i].x += force_magnitude * delta.x / dist;
-                forces[i].y += force_magnitude * delta.y / dist;
-            }
+            std::lock_guard<std::mutex> lock(force_mutex);
+            forces[i].x += force_ij.x;
+            forces[i].y += force_ij.y;
+            forces[j].x -= force_ij.x; // Newton's third law
+            forces[j].y -= force_ij.y; // Newton's third law
         }
     }
 }
 
-void update_bodies(int n, std::vector<double>& masses, std::vector<Vector2D>& positions, std::vector<Vector2D>& velocities, std::vector<Vector2D>& forces, double time_step) {
-    for (int i = 0; i < n; ++i) {
+void compute_forces(const int n, const std::vector<double>& masses, const std::vector<Vector2D>& positions, std::vector<Vector2D>& forces, double G) {
+    forces.assign(n, Vector2D{0, 0});
+    int num_threads = std::thread::hardware_concurrency();
+    int chunk_size = (n + num_threads - 1) / num_threads;
+    std::vector<std::thread> threads;
+
+    for (int i = 0; i < num_threads; ++i) {
+        int start = i * chunk_size;
+        int end = std::min(start + chunk_size, n);
+        if (start < end) {
+            threads.emplace_back(compute_forces_segment, n, std::ref(masses), std::ref(positions), std::ref(forces), start, end, G);
+        }
+    }
+
+    for (auto& t : threads) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+}
+
+void update_bodies_segment(int n, std::vector<double>& masses, std::vector<Vector2D>& positions, std::vector<Vector2D>& velocities, std::vector<Vector2D>& forces, double time_step, int start, int end) {
+    for (int i = start; i < end; ++i) {
         velocities[i].x += forces[i].x / masses[i] * time_step;
         velocities[i].y += forces[i].y / masses[i] * time_step;
         positions[i].x += velocities[i].x * time_step;
         positions[i].y += velocities[i].y * time_step;
+    }
+}
+
+void update_bodies(int n, std::vector<double>& masses, std::vector<Vector2D>& positions, std::vector<Vector2D>& velocities, std::vector<Vector2D>& forces, double time_step) {
+    int num_threads = std::thread::hardware_concurrency();
+    int chunk_size = (n + num_threads - 1) / num_threads;
+    std::vector<std::thread> threads;
+
+    for (int i = 0; i < num_threads; ++i) {
+        int start = i * chunk_size;
+        int end = std::min(start + chunk_size, n);
+        if (start < end) {
+            threads.emplace_back(update_bodies_segment, n, std::ref(masses), std::ref(positions), std::ref(velocities), std::ref(forces), time_step, start, end);
+        }
+    }
+
+    for (auto& t : threads) {
+        if (t.joinable()) {
+            t.join();
+        }
     }
 }
 
