@@ -4,6 +4,8 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <Magick++.h>
+using namespace Magick;
 
 std::mutex force_mutex;
 
@@ -130,6 +132,9 @@ int main() {
     gather_input(n, masses, positions, velocities, time_step, total_time);
 
     std::vector<Vector2D> forces(n);
+
+    Magick::InitializeMagick(nullptr);
+    std::vector<Magick::Image> frames;
 
     for (double t = 0; t < total_time; t += time_step) {
         compute_forces(n, masses, positions, forces);
