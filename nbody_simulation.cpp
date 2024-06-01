@@ -104,6 +104,23 @@ void update_bodies(int n, std::vector<double>& masses, std::vector<Vector2D>& po
     }
 }
 
+void save_frame(const std::vector<Vector2D>& positions, int n, double t, std::vector<Magick::Image>& frames) {
+    int width = 800;
+    int height = 800;
+    Magick::Image frame(Magick::Geometry(width, height), "white");
+    frame.strokeColor("black");
+    frame.strokeWidth(2);
+
+    for (int i = 0; i < n; ++i) {
+        int x = static_cast<int>((positions[i].x + 1) * width / 2);
+        int y = static_cast<int>((positions[i].y + 1) * height / 2);
+        frame.draw(Magick::DrawableCircle(x, y, x + 3, y + 3));
+    }
+
+    frame.annotate("Time: " + std::to_string(t), Magick::NorthWestGravity);
+    frames.push_back(frame);
+}
+
 int main() {
     int n;
     std::vector<double> masses;
@@ -126,7 +143,10 @@ int main() {
         //double dy = positions[1].y - positions[0].y;
         //double distance = std::sqrt(dx * dx + dy * dy);
         //std::cout << "Distance between bodies: " << distance << " meters" << std::endl;
+        save_frame(positions, n, t, frames);
     }
+
+    Magick::writeImages(frames.begin(), frames.end(), "nbody_simulation.gif");
 
     return 0;
 }
