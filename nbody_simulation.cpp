@@ -21,6 +21,10 @@ void gather_input(int &n, std::vector<double> &masses, std::vector<Vector2D> &po
         std::cout << "Enter data for body " << (i + 1) << ":\n";
         std::cout << "  Mass (kg): ";
         std::cin >> masses[i];
+        while (masses[i] <= 0) {
+            std::cout << "  Incorrect Mass. Enter again Mass (kg): ";
+            std::cin >> masses[i];
+        }
         std::cout << "  Initial x position (meters): ";
         std::cin >> positions[i].x;
         std::cout << "  Initial y position (meters): ";
@@ -131,39 +135,11 @@ void save_frame(const std::vector<Vector2D>& positions, int n, int t, std::vecto
                               "[" + std::to_string(min_y) + ", " + std::to_string(max_y) + "]";
     frame.annotate(border_info, Magick::NorthWestGravity);
     frames.push_back(frame);
-
-    // std::cout << "Time: " << t << std::endl;
-    // std::cout << "X borders: [" << min_x << ", " << max_x << "]" << std::endl;
-    // std::cout << "Y borders: [" << min_y << ", " << max_y << "]" << std::endl;
 }
 
-int main() {
-    int n;
-    std::vector<double> masses;
-    std::vector<Vector2D> positions, velocities;
-    double time_step, total_time;
-
-    gather_input(n, masses, positions, velocities, time_step, total_time);
-
-    std::vector<Vector2D> forces(n);
-
+void visualize(const std::vector<std::vector<Vector2D>>& all_positions, int n, double time_step, double total_time) {
     Magick::InitializeMagick(nullptr);
     std::vector<Magick::Image> frames;
-    
-    std::vector<std::vector<Vector2D>> all_positions;
-    all_positions.push_back(positions);
-
-    for (double t = 0; t < total_time; t += time_step) {
-        compute_forces(n, masses, positions, forces);
-        update_bodies(n, masses, positions, velocities, forces, time_step);
-
-        all_positions.push_back(positions);
-                std::cout << "Time: " << t + time_step << std::endl;
-        for (int i = 0; i < n; ++i) {
-            std::cout << "Body " << i + 1 << ": Position (" << positions[i].x << ", " << positions[i].y << ")" << std::endl;
-        }
-    }    
-
     double min_x = all_positions[0][0].x;
     double max_x = all_positions[0][0].x;
     double min_y = all_positions[0][0].y;
@@ -189,6 +165,57 @@ int main() {
     }
 
     Magick::writeImages(frames.begin(), frames.end(), "nbody_simulation.gif");
+}
+
+int main() {
+    int n;
+    std::vector<double> masses;
+    std::vector<Vector2D> positions, velocities;
+    double time_step, total_time;
+
+    gather_input(n, masses, positions, velocities, time_step, total_time);
+
+    std::vector<Vector2D> forces(n);
+    
+    std::vector<std::vector<Vector2D>> all_positions;
+    all_positions.push_back(positions);
+
+    for (double t = 0; t < total_time; t += time_step) {
+        compute_forces(n, masses, positions, forces);
+        update_bodies(n, masses, positions, velocities, forces, time_step);
+
+        all_positions.push_back(positions);
+                std::cout << "Time: " << t + time_step << std::endl;
+        for (int i = 0; i < n; ++i) {
+            std::cout << "Body " << i + 1 << ": Position (" << positions[i].x << ", " << positions[i].y << ")" << std::endl;
+        }
+    }    
+
+    double min_x = all_positions[0][0].x;
+    double max_x = all_positions[0][0].x;
+    double min_y = all_positions[0][0].y;
+    double max_y = all_positions[0][0].y;
+    // for (const auto& positions_at_time : all_positions) {
+    //     for (const auto& pos : positions_at_time) {
+    //         if (pos.x < min_x) min_x = pos.x;
+    //         if (pos.x > max_x) max_x = pos.x;
+    //         if (pos.y < min_y) min_y = pos.y;
+    //         if (pos.y > max_y) max_y = pos.y;
+    //     }
+    // }
+
+    // double margin_x = (max_x - min_x) * 0.1;
+    // double margin_y = (max_y - min_y) * 0.1;
+    // min_x -= margin_x;
+    // max_x += margin_x;
+    // min_y -= margin_y;
+    // max_y += margin_y;
+
+    // for (double t = 0; t < total_time; t += time_step) {
+    //     save_frame(all_positions[t], n, t*time_step, frames, min_x, max_x, min_y, max_y);
+    // }
+
+    visualize(all_positions, n, time_step, total_time);
 
     return 0;
 }
