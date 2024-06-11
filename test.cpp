@@ -1,8 +1,6 @@
 #include "test.hpp"
 
 void setup_solar_system(int &n, std::vector<double> &masses, std::vector<Vector2D> &positions, std::vector<Vector2D> &velocities) {
-    // Sample data for the solar system (mass in kg, positions in meters, velocities in meters/second)
-    // Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune
     n = 9;
     masses = {
         1.9885e30, // Sun
@@ -55,6 +53,14 @@ void run_simulation(const std::string &algorithm_name, void (*algorithm)(Scenari
     }
 }
 
+void simple_nbody_algorithm(Scenario &bodies, double time_step, double total_time) {
+    std::vector<Vector2D> forces(bodies.r.size());
+    for (double t = 0; t < total_time; t += time_step) {
+        compute_forces(bodies.r.size(), bodies.m, bodies.r, forces);
+        update_bodies(bodies.r.size(), bodies.m, bodies.r, bodies.v, forces, time_step);
+    }
+}
+
 int main() {
     int n;
     std::vector<double> masses;
@@ -71,14 +77,7 @@ int main() {
 
     Scenario bodies_barnes_hut = bodies_simple;
 
-    run_simulation("Simple N-Body Algorithm", [](Scenario &b, double ts, double tt) {
-        for (double t = 0; t < tt; t += ts) {
-            std::vector<Vector2D> forces(b.r.size());
-            compute_forces(b.r.size(), b.m, b.r, forces);
-            update_bodies(b.r.size(), b.m, b.r, b.v, forces, ts);
-        }
-    }, bodies_simple, time_step, total_time);
-
+    run_simulation("Simple N-Body Algorithm", simple_nbody_algorithm, bodies_simple, time_step, total_time);
     run_simulation("Barnes-Hut Algorithm", barnes_hut, bodies_barnes_hut, time_step, total_time);
 
     return 0;
