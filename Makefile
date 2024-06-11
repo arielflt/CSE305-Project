@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -pthread
-LDFLAGS = `Magick++-config --cxxflags --cppflags --ldflags --libs`
+CXXFLAGS = -std=c++11 -Wall -pthread -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=1
+LDFLAGS = -I/users/eleves-a/2021/andrea.foffani-pifarre/ImageMagick/include/ImageMagick-7 -L/users/eleves-a/2021/andrea.foffani-pifarre/ImageMagick/lib -lMagick++-7.Q16HDRI -lMagickWand-7.Q16HDRI -lMagickCore-7.Q16HDRI
 
 all: nbody_simulation nbody_simulation2 test
 
@@ -8,7 +8,7 @@ nbody_simulation: main.cpp nbody_simulation.o
 	$(CXX) $(CXXFLAGS) -o $@ main.cpp nbody_simulation.o $(LDFLAGS)
 
 nbody_simulation2: main2.cpp nbody_simulation2.o barnes_hut.o
-	$(CXX) $(CXXFLAGS) -o $@ main2.cpp nbody_simulation2.o barnes_hut.o $(LDFLAGS)
+	$(CXX) -std=c++11 -fopenmp -o $@ main2.cpp nbody_simulation2.o barnes_hut.o $(LDFLAGS)
 
 test: test.cpp test.o nbody_simulation.o nbody_simulation2.o barnes_hut.o
 	$(CXX) $(CXXFLAGS) -o $@ test.cpp test.o nbody_simulation.o nbody_simulation2.o barnes_hut.o $(LDFLAGS)
