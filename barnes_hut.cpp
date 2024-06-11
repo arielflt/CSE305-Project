@@ -7,16 +7,19 @@ void barnes_hut(Scenario &bodies, double time_step, double total_time) {
     for (double t = 0; t < total_time; t += time_step) {
         barnes_hut_update_step(bodies, time_step);
 
-        // Debug print positions and velocities
+        // Debug print positions, velocities, and forces
         std::cout << "Time: " << t + time_step << std::endl;
         for (size_t i = 0; i < bodies.r.size(); ++i) {
-            std::cout << "Body " << i + 1 << ": Position (" << bodies.r[i].x << ", " << bodies.r[i].y << "), Velocity (" << bodies.v[i].x << ", " << bodies.v[i].y << ")\n";
+            std::cout << "Body " << i + 1 << ": Position (" << bodies.r[i].x << ", " << bodies.r[i].y << "), Velocity (" << bodies.v[i].x << ", " << bodies.v[i].y << "), Force (" << bodies.f[i].x << ", " << bodies.f[i].y << ")\n";
         }
     }
 }
 
 void barnes_hut_update_step(Scenario &bodies, double time_step) {
     QuadNode *root = QuadNode::constructBarnesHutTree(&bodies);
+
+    // Initialize forces to zero
+    bodies.f.assign(bodies.r.size(), Vector2D{0.0, 0.0});
 
     /* Calculate the force exerted */
     for (size_t i = 0; i < bodies.r.size(); i++) {
@@ -30,6 +33,7 @@ void barnes_hut_update_step(Scenario &bodies, double time_step) {
             if (dist > 1e-6) {  // Avoid very small distances causing large forces
                 double force_mag = G * other_m * m / dist_sq;
                 Vector2D force = dr * (force_mag / dist);
+                bodies.f[i] += force;  // Store the force
                 bodies.v[i] += force * (time_step / m);
             }
         };

@@ -46,9 +46,9 @@ int main() {
 
     barnes_hut(bodies, time_step, total_time);
 
-    std::cout << "Final positions and velocities:\n";
+    std::cout << "Final positions, velocities, and forces:\n";
     for (size_t i = 0; i < bodies.r.size(); ++i) {
-        std::cout << "Body " << i + 1 << ": Position (" << bodies.r[i].x << ", " << bodies.r[i].y << "), Velocity (" << bodies.v[i].x << ", " << bodies.v[i].y << ")\n";
+        std::cout << "Body " << i + 1 << ": Position (" << bodies.r[i].x << ", " << bodies.r[i].y << "), Velocity (" << bodies.v[i].x << ", " << bodies.v[i].y << "), Force (" << bodies.f[i].x << ", " << bodies.f[i].y << ")\n";
     }
 
     return 0;

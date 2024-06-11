@@ -37,6 +37,7 @@ struct Scenario {
     std::vector<Vector2D> r;
     std::vector<Vector2D> v;
     std::vector<double> m;
+    std::vector<Vector2D> f;  // Added vector to store forces
 };
 
 void gather_input(int &n, std::vector<double> &masses, std::vector<Vector2D> &positions, std::vector<Vector2D> &velocities, double &time_step, double &total_time);
