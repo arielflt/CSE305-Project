@@ -53,10 +53,9 @@ public:
         return dimension.x * dimension.x / dist_sq < theta * theta;
     }
 
-private:
-    // Recursively add body `index` to this node
     void addBody(int index);
 
+private:
     quad getQuad(const Vector2D &r) const {
         return r.x < center.x ? (r.y < center.y ? sw : nw)
                               : (r.y < center.y ? se : ne);
