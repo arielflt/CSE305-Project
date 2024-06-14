@@ -140,7 +140,6 @@ int main() {
     double time_step, total_time;
     int num_threads;
 
-
     gather_input(n, masses, positions, velocities, time_step, total_time, num_threads);
 
     Scenario bodies;
@@ -161,3 +160,4 @@ int main() {
 
     return 0;
 }
+

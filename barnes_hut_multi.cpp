@@ -42,6 +42,7 @@ void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *
         }
     }
 }
+
 void barnes_hut_update_step_multi(Scenario &bodies, int num_threads, double time_step) {
     QuadNode *root = QuadNode::constructBarnesHutTree(&bodies);
     std::vector<std::thread> threads;
@@ -49,7 +50,7 @@ void barnes_hut_update_step_multi(Scenario &bodies, int num_threads, double time
     int num_bodies_per_thread = num_bodies / num_threads;
 
     for (int i = 0; i < num_threads - 1; ++i) {
-        threads.emplace_back(barnes_hut_update_step_aux, i * num_bodies_per_thread, (i + 1) * num_bodies_per_thread, std::ref(bodies), root);
+        threads.emplace_back(barnes_hut_update_step_aux, i * num_bodies_per_thread, (i + 1) * num_bodies_per_thread, std::ref(bodies), root, time_step);
     }
     barnes_hut_update_step_aux((num_threads - 1) * num_bodies_per_thread, num_bodies, bodies, root, time_step);
 
@@ -64,6 +65,7 @@ void barnes_hut_update_step_multi(Scenario &bodies, int num_threads, double time
 
     delete root;
 }
+
 
 
 void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces, int num_threads) {
