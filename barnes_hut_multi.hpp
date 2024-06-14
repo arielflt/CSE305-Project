@@ -92,10 +92,10 @@ private:
 };
 
 // Function to update the simulation step with multiple threads
-void barnes_hut_update_step_multi(Scenario &bodies, int num_threads);
+void barnes_hut_update_step_multi(Scenario &bodies, int num_threads, double time_step);
 
 // Function to perform the update for a subset of bodies
-void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root);
+void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root, double time_step);
 
 void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces, int num_threads);
 
