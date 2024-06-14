@@ -35,6 +35,7 @@ void QuadNode::addBody(int index) {
     updateCenterOfMass(index);
 }
 
+
 void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root, double time_step) {
     for (int i = start; i < end; ++i) {
         const double m = bodies.m[i];

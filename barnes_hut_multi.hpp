@@ -26,22 +26,17 @@ public:
     // Barnes-Hut tree from `bodies`.
     // NOTE:: Remember to delete the result.
     static QuadNode *constructBarnesHutTree(Scenario *bodies) {
-        QuadNode *root =
-            new QuadNode(bodies, Vector2D{500.0, 500.0},
-                         Vector2D{1000.0, 1000.0});
+        QuadNode *root = new QuadNode(bodies, Vector2D(canvas_width / 2., canvas_height / 2.), Vector2D(universe_width, universe_height));
 
         for (size_t i = 0; i < bodies->r.size(); i++) {
             root->addBody(i);
         }
 
         return root;
-    }
+    }   
 
     QuadNode(Scenario *const bodies, const Vector2D &center, const Vector2D &dimension)
-        : center(center),
-          dimension(dimension),
-          scenario(bodies),
-          center_of_mass(center) {}
+    : center(center), dimension(dimension), scenario(bodies), center_of_mass(center) {}
 
     ~QuadNode() {
         for (int i = 0; i < 4; i++) delete children[i];
@@ -57,37 +52,33 @@ public:
 
 private:
     quad getQuad(const Vector2D &r) const {
-        return r.x < center.x ? (r.y < center.y ? sw : nw)
-                              : (r.y < center.y ? se : ne);
+        return r.x < center.x ? (r.y < center.y ? sw : nw) : (r.y < center.y ? se : ne);
     }
 
     void updateCenterOfMass(size_t id) {
         double new_m = m + scenario->m[id];
-        center_of_mass =
-            (center_of_mass * m + scenario->r[id] * scenario->m[id]) / new_m;
+        center_of_mass = (center_of_mass * m + scenario->r[id] * scenario->m[id]) / new_m;
         m = new_m;
     }
 
     Vector2D getQuadCenter(quad q) const {
         switch (q) {
             case nw:
-                return center + Vector2D{-dimension.x / 4, dimension.y / 4};
+                return center + Vector2D(-dimension.x / 4, dimension.y / 4);
             case ne:
-                return center + Vector2D{dimension.x / 4, dimension.y / 4};
+                return center + Vector2D(dimension.x / 4, dimension.y / 4);
             case sw:
-                return center + Vector2D{-dimension.x / 4, -dimension.y / 4};
+                return center + Vector2D(-dimension.x / 4, -dimension.y / 4);
             case se:
-                return center + Vector2D{dimension.x / 4, -dimension.y / 4};
+                return center + Vector2D(dimension.x / 4, -dimension.y / 4);
             default:
-                return Vector2D{0, 0};
-        };
+                return Vector2D(0, 0);
+        }
     }
 
     bool isInside(const Vector2D &point) const {
-        return point.x <= center.x + dimension.x / 2 &&
-               point.x >= center.x - dimension.x / 2 &&
-               point.y <= center.y + dimension.y / 2 &&
-               point.y >= center.y - dimension.y / 2;
+        return point.x <= center.x + dimension.x / 2 && point.x >= center.x - dimension.x / 2 &&
+           point.y <= center.y + dimension.y / 2 && point.y >= center.y - dimension.y / 2;
     }
 };
 
