@@ -6,9 +6,6 @@
 #include <stack>
 #include <vector>
 
-const double theta = 0.5; // Threshold for the approximation
-const double G = 6.67430e-11; // Gravitational constant
-
 class QuadNode {
 public:
     enum quad { nw, ne, sw, se };
