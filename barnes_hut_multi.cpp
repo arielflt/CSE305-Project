@@ -5,6 +5,35 @@
 #include <stack>
 #include <thread>
 
+void QuadNode::addBody(int index) {
+    if (!isInside(scenario->r[index])) return;
+
+    if (is_empty) {
+        body_id.push_back(index);
+        updateCenterOfMass(index);
+        is_empty = false;
+        return;
+    }
+
+    if (body_id.size() == 1) {
+        int existing_body = body_id[0];
+        body_id.clear();
+
+        quad q = getQuad(scenario->r[existing_body]);
+        if (!children[q]) {
+            children[q] = new QuadNode(scenario, getQuadCenter(q), dimension / 2);
+        }
+        children[q]->addBody(existing_body);
+    }
+
+    quad q = getQuad(scenario->r[index]);
+    if (!children[q]) {
+        children[q] = new QuadNode(scenario, getQuadCenter(q), dimension / 2);
+    }
+    children[q]->addBody(index);
+
+    updateCenterOfMass(index);
+}
 
 void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root, double time_step) {
     for (int i = start; i < end; ++i) {
