@@ -4,9 +4,9 @@
 #include <vector>
 #include <Magick++.h>
 #include <cmath>
+
 using namespace Magick;
 
-std::mutex force_mutex;
 
 void gather_input(int &n, std::vector<double> &masses, std::vector<Vector2D> &positions, std::vector<Vector2D> &velocities, double &time_step, double &total_time) {
     std::cout << "Enter the number of bodies to simulate: ";

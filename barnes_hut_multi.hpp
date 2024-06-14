@@ -1,7 +1,7 @@
-#ifndef BARNES_HUT_HPP
-#define BARNES_HUT_HPP
+#ifndef BARNES_HUT_MULTI_HPP
+#define BARNES_HUT_MULTI_HPP
 
-#include "nbody_simulation2.hpp"
+#include "nbody_simulation_bhmulti.hpp"
 #include <cmath>
 #include <stack>
 #include <vector>
@@ -97,6 +97,6 @@ void barnes_hut_update_step_multi(Scenario &bodies, int num_threads);
 // Function to perform the update for a subset of bodies
 void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root);
 
-void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces);
+void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces, int num_threads);
 
-#endif // BARNES_HUT_HPP
+#endif // BARNES_HUT_MULTI_HPP
