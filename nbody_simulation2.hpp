@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <Magick++.h>
+#include <cmath>
 
 struct Vector2D {
     double x, y;
@@ -30,6 +31,10 @@ struct Vector2D {
         x -= other.x;
         y -= other.y;
         return *this;
+    }
+
+    double norm2() const {
+        return x * x + y * y;
     }
 };
 
