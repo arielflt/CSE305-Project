@@ -9,6 +9,10 @@
 struct Vector2D {
     double x, y;
 
+    Vector2D() : x(0), y(0) {}  // Default constructor
+    Vector2D(double x_val, double y_val) : x(x_val), y(y_val) {}  // Parameterized constructor
+
+
     Vector2D operator+(const Vector2D& other) const {
         return {x + other.x, y + other.y};
     }

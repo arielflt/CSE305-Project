@@ -5,6 +5,22 @@
 #include <stack>
 #include <thread>
 
+const double theta = 0.5; // Threshold for the approximation
+const double G = 6.67430e-11; // Gravitational constant
+
+const double canvas_width = 1000.0;
+const double canvas_height = 1000.0;
+const double universe_width = 1000.0;
+const double universe_height = 1000.0;
+
+
+QuadNode::QuadNode(Scenario *const bodies, const Vector2D &center, const Vector2D &dimension)
+    : center(center), dimension(dimension), scenario(bodies), center_of_mass(center) {}
+
+QuadNode::~QuadNode() {
+    for (int i = 0; i < 4; i++) delete children[i];
+}
+
 void QuadNode::addBody(int index) {
     if (!isInside(scenario->r[index])) return;
 
@@ -34,6 +50,56 @@ void QuadNode::addBody(int index) {
 
     updateCenterOfMass(index);
 }
+
+QuadNode* QuadNode::constructBarnesHutTree(Scenario *bodies) {
+    std::cout << "Initializing root node.\n";
+    QuadNode *root = new QuadNode(bodies, Vector2D(canvas_width / 2., canvas_height / 2.), Vector2D(universe_width, universe_height));
+
+    for (size_t i = 0; i < bodies->r.size(); i++) {
+        std::cout << "Adding body " << i << "\n";
+        root->addBody(i);
+    }
+
+    std::cout << "Tree construction complete.\n";
+    return root;
+}
+
+bool QuadNode::isFarEnough(const Vector2D &point) const {
+    Vector2D dr = center_of_mass - point;
+    double dist_sq = std::max(dr.norm2(), 1e-6);
+    return dimension.x * dimension.x / dist_sq < theta * theta;
+}
+
+QuadNode::quad QuadNode::getQuad(const Vector2D &r) const {
+    return r.x < center.x ? (r.y < center.y ? sw : nw) : (r.y < center.y ? se : ne);
+}
+
+void QuadNode::updateCenterOfMass(size_t id) {
+    double new_m = m + scenario->m[id];
+    center_of_mass = (center_of_mass * m + scenario->r[id] * scenario->m[id]) / new_m;
+    m = new_m;
+}
+
+Vector2D QuadNode::getQuadCenter(quad q) const {
+    switch (q) {
+        case nw:
+            return center + Vector2D(-dimension.x / 4, dimension.y / 4);
+        case ne:
+            return center + Vector2D(dimension.x / 4, dimension.y / 4);
+        case sw:
+            return center + Vector2D(-dimension.x / 4, -dimension.y / 4);
+        case se:
+            return center + Vector2D(dimension.x / 4, -dimension.y / 4);
+        default:
+            return Vector2D(0, 0);
+    }
+}
+
+bool QuadNode::isInside(const Vector2D &point) const {
+    return point.x <= center.x + dimension.x / 2 && point.x >= center.x - dimension.x / 2 &&
+           point.y <= center.y + dimension.y / 2 && point.y >= center.y - dimension.y / 2;
+}
+
 
 
 void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root, double time_step) {
