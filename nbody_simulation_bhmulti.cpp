@@ -75,6 +75,11 @@ void save_frame(const std::vector<Vector2D> &positions, const std::vector<Vector
     double range_y = max_y - min_y;
 
     for (int i = 0; i < n; ++i) {
+        if (i >= positions.size() || i >= velocities.size() || i >= forces.size()) {
+            std::cerr << "Error: Out of bounds access in save_frame\n";
+            return;
+        }
+
         int x = ((positions[i].x - min_x) / range_x) * width;
         int y = height - ((positions[i].y - min_y) / range_y) * height;
 
@@ -90,11 +95,10 @@ void save_frame(const std::vector<Vector2D> &positions, const std::vector<Vector
         frame.fillColor("none"); // Reset fill color before drawing arrows
         draw_arrow(frame, x, y, vx, vy, colors[i % colors.size()]); // velocities are in the color of the object
         if (n > 1) {
-            for (const auto &force : forces) {
-                draw_arrow(frame, x, y, Fx, Fy, "black"); // forces are in color black
-            }
+            draw_arrow(frame, x, y, Fx, Fy, "black"); // forces are in color black
         }
     }
+
     frame.strokeColor("black");
     std::string border_info = "Time: " + std::to_string(t) +
                               "\nRange: [" + std::to_string(min_x) + ", " + std::to_string(max_x) + "] x " +
@@ -103,13 +107,23 @@ void save_frame(const std::vector<Vector2D> &positions, const std::vector<Vector
     frames.push_back(frame);
 }
 
+
 void visualize(const std::vector<std::vector<Vector2D>> &all_positions, const std::vector<std::vector<Vector2D>> &all_velocities, const std::vector<std::vector<Vector2D>> &all_forces, int n, double time_step, double total_time) {
     Magick::InitializeMagick(nullptr);
     std::vector<Magick::Image> frames;
+
+    std::cout << "Initializing visualization...\n";
+
+    if (all_positions.empty() || all_positions[0].empty()) {
+        std::cerr << "Error: No positions available for visualization\n";
+        return;
+    }
+
     double min_x = all_positions[0][0].x;
     double max_x = all_positions[0][0].x;
     double min_y = all_positions[0][0].y;
     double max_y = all_positions[0][0].y;
+
     for (const auto &positions_at_time : all_positions) {
         for (const auto &pos : positions_at_time) {
             if (pos.x < min_x) min_x = pos.x;
@@ -126,12 +140,30 @@ void visualize(const std::vector<std::vector<Vector2D>> &all_positions, const st
     min_y -= margin_y;
     max_y += margin_y;
 
-    for (double t = 0; t < total_time; t += time_step) {
+    std::cout << "Generating frames...\n";
+
+    for (size_t t = 0; t < all_positions.size(); ++t) {
+        std::cout << "Saving frame " << t << "...\n";
+        if (t >= all_velocities.size() || t >= all_forces.size()) {
+            std::cerr << "Error: Out of bounds access in visualize\n";
+            return;
+        }
+
+        // Ensure the sizes of the positions, velocities, and forces vectors match
+        if (all_positions[t].size() != all_velocities[t].size() || all_positions[t].size() != all_forces[t].size()) {
+            std::cerr << "Error: Mismatch in sizes of positions, velocities, and forces at time " << t << "\n";
+            return;
+        }
+
         save_frame(all_positions[t], all_velocities[t], all_forces[t], n, t * time_step, frames, min_x, max_x, min_y, max_y);
     }
 
+    std::cout << "Writing images...\n";
     Magick::writeImages(frames.begin(), frames.end(), "nbody_simulation3.gif");
+    std::cout << "Images written.\n";
 }
+
+
 
 int main() {
     int n;
@@ -146,18 +178,25 @@ int main() {
     bodies.m = masses;
     bodies.r = positions;
     bodies.v = velocities;
+    bodies.f = std::vector<Vector2D>(n, Vector2D{0, 0});  // Initialize forces vector
 
-    std::vector<Vector2D> forces(n);
+    std::vector<Vector2D> forces(n, Vector2D{0, 0});
 
     std::vector<std::vector<Vector2D>> all_positions, all_velocities, all_forces;
     all_positions.push_back(bodies.r);
     all_velocities.push_back(bodies.v);
-    all_forces.push_back(forces);
+    all_forces.push_back(bodies.f);
 
+    std::cout << "Starting simulation...\n";
     barnes_hut(bodies, time_step, total_time, all_positions, all_velocities, all_forces, num_threads);
+    std::cout << "Simulation complete.\n";
 
+    std::cout << "Starting visualization...\n";
     visualize(all_positions, all_velocities, all_forces, n, time_step, total_time);
+    std::cout << "Visualization complete.\n";
 
     return 0;
 }
+
+
 

@@ -51,6 +51,7 @@ void QuadNode::addBody(int index) {
     updateCenterOfMass(index);
 }
 
+
 QuadNode* QuadNode::constructBarnesHutTree(Scenario *bodies) {
     std::cout << "Initializing root node.\n";
     QuadNode *root = new QuadNode(bodies, Vector2D(canvas_width / 2., canvas_height / 2.), Vector2D(universe_width, universe_height));
@@ -100,12 +101,18 @@ bool QuadNode::isInside(const Vector2D &point) const {
            point.y <= center.y + dimension.y / 2 && point.y >= center.y - dimension.y / 2;
 }
 
-
-
 void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *root, double time_step) {
+    std::cout << "Auxiliary update step for range " << start << " to " << end << std::endl;
     for (int i = start; i < end; ++i) {
+        if (i >= bodies.m.size() || i >= bodies.r.size() || i >= bodies.v.size() || i >= bodies.f.size()) {
+            std::cerr << "Error: Out of bounds access during force calculation\n";
+            return;
+        }
+
         const double m = bodies.m[i];
         const Vector2D &r = bodies.r[i];
+
+        std::cout << "Updating body " << i << " at position (" << r.x << ", " << r.y << ")\n";
 
         auto update_v = [&](const Vector2D &other_r, const double other_m) {
             Vector2D dr = other_r - r;
@@ -114,6 +121,7 @@ void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *
             double force_mag = G * other_m * m / dist_sq;
             Vector2D force = dr * (force_mag / dist);
             bodies.v[i] += force * (time_step / m);
+            bodies.f[i] += force;  // Update forces
         };
 
         std::stack<QuadNode *> stack;
@@ -125,6 +133,10 @@ void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *
             if (!curr->body_id.empty()) {
                 for (int curr_body : curr->body_id) {
                     if (curr_body != i) {
+                        if (curr_body >= bodies.r.size() || curr_body >= bodies.m.size()) {
+                            std::cerr << "Error: Out of bounds access during stack processing\n";
+                            return;
+                        }
                         update_v(bodies.r[curr_body], bodies.m[curr_body]);
                     }
                 }
@@ -137,46 +149,76 @@ void barnes_hut_update_step_aux(int start, int end, Scenario &bodies, QuadNode *
             }
         }
     }
+    std::cout << "Auxiliary update step complete for range " << start << " to " << end << std::endl;
 }
 
+
 void barnes_hut_update_step_multi(Scenario &bodies, int num_threads, double time_step) {
+    std::cout << "Constructing Barnes-Hut tree...\n";
     QuadNode *root = QuadNode::constructBarnesHutTree(&bodies);
+    if (root == nullptr) {
+        std::cerr << "Error: root is null" << std::endl;
+        return;
+    }
+    std::cout << "Tree constructed.\n";
+
     std::vector<std::thread> threads;
     int num_bodies = bodies.r.size();
     int num_bodies_per_thread = num_bodies / num_threads;
 
     for (int i = 0; i < num_threads - 1; ++i) {
+        std::cout << "Starting thread " << i << "\n";
         threads.emplace_back(barnes_hut_update_step_aux, i * num_bodies_per_thread, (i + 1) * num_bodies_per_thread, std::ref(bodies), root, time_step);
     }
+    std::cout << "Main thread handling remaining bodies.\n";
     barnes_hut_update_step_aux((num_threads - 1) * num_bodies_per_thread, num_bodies, bodies, root, time_step);
 
     for (auto &thread : threads) {
         thread.join();
     }
 
-    // Update positions
+    std::cout << "Updating positions.\n";
     for (size_t i = 0; i < bodies.r.size(); ++i) {
+        if (i >= bodies.v.size()) {
+            std::cerr << "Error: Out of bounds access during position update\n";
+            return;
+        }
         bodies.r[i] += bodies.v[i] * time_step;
     }
 
     delete root;
+    std::cout << "Update complete.\n";
 }
 
 
 
-void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces, int num_threads) {
-    for (double t = 0; t < total_time; t += time_step) {
-        barnes_hut_update_step_multi(bodies, num_threads, time_step);
+void barnes_hut(Scenario &bodies, double time_step, double total_time, 
+                std::vector<std::vector<Vector2D>> &all_positions, 
+                std::vector<std::vector<Vector2D>> &all_velocities, 
+                std::vector<std::vector<Vector2D>> &all_forces, int num_threads) {
 
-        // Store positions, velocities, and forces for each body
+    std::cout << "Starting barnes_hut function...\n";
+
+    for (double t = 0; t < total_time; t += time_step) {
+        std::cout << "Time: " << t << "\n";
+        
+        std::cout << "Calling barnes_hut_update_step_multi...\n";
+        barnes_hut_update_step_multi(bodies, num_threads, time_step);
+        
+        std::cout << "barnes_hut_update_step_multi completed.\n";
+
+        // Capture the current state of the system
+        if (bodies.r.size() != bodies.v.size() || bodies.r.size() != bodies.f.size()) {
+            std::cerr << "Error: Mismatch in sizes of positions, velocities, and forces in barnes_hut\n";
+            return;
+        }
+
         all_positions.push_back(bodies.r);
         all_velocities.push_back(bodies.v);
         all_forces.push_back(bodies.f);
 
-        // Debug print positions, velocities, and forces
-        std::cout << "Time: " << t + time_step << std::endl;
-        for (size_t i = 0; i < bodies.r.size(); ++i) {
-            std::cout << "Body " << i + 1 << ": Position (" << bodies.r[i].x << ", " << bodies.r[i].y << "), Velocity (" << bodies.v[i].x << ", " << bodies.v[i].y << "), Force (" << bodies.f[i].x << ", " << bodies.f[i].y << ")\n";
-        }
+        std::cout << "State captured for time: " << t << "\n";
     }
+
+    std::cout << "barnes_hut function complete.\n";
 }
