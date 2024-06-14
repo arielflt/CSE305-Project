@@ -4,8 +4,6 @@
 #include <vector>
 #include <Magick++.h>
 #include <cmath>
-#include <thread>
-#include <mutex>
 using namespace Magick;
 
 std::mutex force_mutex;
