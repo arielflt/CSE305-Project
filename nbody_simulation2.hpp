@@ -21,6 +21,10 @@ struct Vector2D {
         return {x * scalar, y * scalar};
     }
 
+    Vector2D operator/(double scalar) const {
+        return {x / scalar, y / scalar};
+    }
+
     Vector2D& operator+=(const Vector2D& other) {
         x += other.x;
         y += other.y;
@@ -30,6 +34,18 @@ struct Vector2D {
     Vector2D& operator-=(const Vector2D& other) {
         x -= other.x;
         y -= other.y;
+        return *this;
+    }
+
+    Vector2D& operator*=(double scalar) {
+        x *= scalar;
+        y *= scalar;
+        return *this;
+    }
+
+    Vector2D& operator/=(double scalar) {
+        x /= scalar;
+        y /= scalar;
         return *this;
     }
 
