@@ -1,11 +1,17 @@
 #include "barnes_hut.hpp"
 #include <iostream>
-#include <stack>
 #include <cmath>
+#include <vector>
+#include <stack>
 
-void barnes_hut(Scenario &bodies, double time_step, double total_time) {
+void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces) {
     for (double t = 0; t < total_time; t += time_step) {
         barnes_hut_update_step(bodies, time_step);
+
+        // Store positions, velocities, and forces for each body
+        all_positions.push_back(bodies.r);
+        all_velocities.push_back(bodies.v);
+        all_forces.push_back(bodies.f);
 
         // Debug print positions, velocities, and forces
         std::cout << "Time: " << t + time_step << std::endl;
@@ -65,42 +71,4 @@ void barnes_hut_update_step(Scenario &bodies, double time_step) {
         bodies.r[i] += bodies.v[i] * time_step;
     }
     delete root;
-}
-
-void QuadNode::addBody(int index) {
-    if (!isInside(scenario->r[index])) {
-        return;
-    }
-
-    // If node is empty, add body to node
-    if (is_empty || dimension.x < 1e-3) {
-        is_empty = false;
-        body_id.push_back(index);
-        updateCenterOfMass(index);
-        return;
-    }
-
-    // If there is only one body in the node, create a new define the sub
-    // node of the old because the node was not split yet. The case where
-    // there are multiple bodies is handled above, so there should always be
-    // only one body here.
-    if (!body_id.empty()) {
-        quad quad_old = getQuad(scenario->r[body_id[0]]);
-        Vector2D quad_center = getQuadCenter(quad_old);
-        children[quad_old] = new QuadNode(scenario, quad_center, dimension / 2);
-        children[quad_old]->addBody(body_id[0]);
-        body_id.clear();
-    }
-
-    // Get quad where new body belongs
-    quad quad_new = getQuad(scenario->r[index]);
-
-    // If the new node is empty, initialize the node
-    if (children[quad_new] == nullptr) {
-        Vector2D quad_center = getQuadCenter(quad_new);
-        children[quad_new] = new QuadNode(scenario, quad_center, dimension / 2);
-    }
-    // Add the body to the node and update center of mass
-    children[quad_new]->addBody(index);
-    updateCenterOfMass(index);
 }

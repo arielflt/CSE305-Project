@@ -93,6 +93,6 @@ private:
 };
 
 void barnes_hut_update_step(Scenario &bodies, double time_step);
-void barnes_hut(Scenario &bodies, double time_step, double total_time);
+void barnes_hut(Scenario &bodies, double time_step, double total_time, std::vector<std::vector<Vector2D>> &all_positions, std::vector<std::vector<Vector2D>> &all_velocities, std::vector<std::vector<Vector2D>> &all_forces);
 
 #endif // BARNES_HUT_HPP
